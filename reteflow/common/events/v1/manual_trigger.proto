@@ -1,0 +1,41 @@
+syntax = "proto3";
+
+package reteflow.common.events.v1;
+
+option go_package = "github.com/reteflow/plugin-spec/gen/go/events/v1";
+
+import "buf/validate/validate.proto";
+import "google/api/field_behavior.proto";
+
+// ManualWorkflowTrigger is an event that commands the node to run a specific
+// workflow, bypassing normal active checks.
+message ManualWorkflowTrigger {
+  // The ID of the user triggering the workflow.
+  string user_id = 1 [
+    (buf.validate.field).string.min_len = 1,
+    (google.api.field_behavior) = REQUIRED
+  ];
+
+  // The ID of the workflow to execute.
+  string workflow_id = 2 [
+    (buf.validate.field).string.min_len = 1,
+    (google.api.field_behavior) = REQUIRED
+  ];
+
+  // The actual event data that will be passed to the workflow's entry node.
+  oneof trigger_event {
+    // Enforce that exactly one trigger type must be provided
+    option (buf.validate.oneof).required = true;
+    
+    SolanaTransactionTrigger solana_transaction = 3;
+  }
+}
+
+// Contains the information needed to fetch a Solana transaction.
+message SolanaTransactionTrigger {
+  // The transaction signature (Tx Hash) to process.
+  string signature = 1 [
+    (buf.validate.field).string.min_len = 1,
+    (google.api.field_behavior) = REQUIRED
+  ];
+}

@@ -1,0 +1,172 @@
+syntax = "proto3";
+
+package reteflow.pluginspec.v1;
+
+option go_package = "github.com/reteflow/plugin-spec/gen/go/v1";
+
+import "google/protobuf/struct.proto";
+import "buf/validate/validate.proto";
+import "google/api/field_behavior.proto";
+
+// PluginSpec defines the execution contract for a plugin.
+message PluginSpec {
+  // The detailed information for input schemas.
+  repeated SchemaInfo input_schemas = 51;
+  // The detailed information for the output schema.
+  repeated SchemaInfo output_schemas = 2;
+
+  // Configuration for the plugin, provided as a simple key-value map.
+  map<string, ConfigValue> config = 3 [
+    json_name = "config",
+    (buf.validate.field).map.keys.string.min_len = 1,
+    (buf.validate.field).map.keys.string.max_len = 64
+    // Note: 'values' are validated by the ConfigValue message constraints themselves.
+  ];
+
+  // If true, the Engine will NOT execute this plugin if ANY of its resolved inputs
+  // have the 'empty' flag set to true.
+  // Instead, the Engine will automatically:
+  // 1. Set the Task Status to SKIPPED.
+  // 2. Generate 'empty' output messages matching the 'output_schemas'.
+  // 3. Charge 0 compute units.
+  //
+  // Set this to 'false' for Router/Fallback nodes that need to handle empty inputs explicitly.
+  bool skip_on_empty_input = 4;
+}
+
+// ConfigType specifies the data type of a configuration value.
+enum ConfigType {
+  CONFIG_TYPE_UNSPECIFIED = 0;
+  CONFIG_TYPE_STRING = 1;
+  CONFIG_TYPE_BOOL = 2;
+  CONFIG_TYPE_MAP = 3;
+  CONFIG_TYPE_INT = 4;
+  CONFIG_TYPE_FLOAT = 5;
+}
+
+// ConfigValue defines the properties for a single configuration item.
+message ConfigValue {
+  // A human-readable name.
+  string name = 1 [
+    (buf.validate.field).string.min_len = 1,
+    (buf.validate.field).string.max_len = 24,
+    (google.api.field_behavior) = REQUIRED
+  ];
+  // A human-readable description explaining what this value is for.
+  string description = 2 [
+    (buf.validate.field).string.min_len = 1,
+    (buf.validate.field).string.max_len = 64,
+    (google.api.field_behavior) = REQUIRED
+  ];
+  // A default or static value. Can be left empty.
+  string value = 3 [
+    (buf.validate.field).string.max_len = 1024
+  ];
+  // If true, the value must be provided for the plugin to function correctly.
+  bool required = 4;
+  // If true, the system will attempt to load the value from an environment variable.
+  bool from_env = 5;
+  // A list of predefined, allowed values for this configuration item.
+  repeated string allowed_values = 6 [
+    (buf.validate.field).repeated.items.string.max_len = 64
+  ];
+  // If true, the value can be a list of multiple values, allowing for more complex configurations.
+  bool multiple_values = 7;
+
+  // The data type of the configuration value.
+  ConfigType type = 8 [
+    (google.api.field_behavior) = REQUIRED,
+    (buf.validate.field).enum.defined_only = true,
+    // Optional: Explicitly forbid the Unspecified type if you want to force a choice
+    (buf.validate.field).enum.not_in = 0
+  ];
+}
+
+// SchemaInfo provides descriptive metadata about a message schema.
+message SchemaInfo {
+  // The human-readable name of the schema for UI display.
+  string name = 1 [
+    (buf.validate.field).string.min_len = 1,
+    (google.api.field_behavior) = REQUIRED
+  ];
+  // A brief description of the schema's purpose.
+  string description = 2;
+  // The fully qualified name of the message type.
+  string type = 3 [
+    (buf.validate.field).string.min_len = 1,
+    (google.api.field_behavior) = REQUIRED
+  ];
+}
+
+// PluginCall serves as the input payload passed from the Host to the Guest.
+// It encapsulates everything the Plugin needs to perform its task in a stateless manner.
+message PluginCall {
+  // A list of resolved input messages derived from upstream nodes.
+  // - The order of messages here corresponds exactly to the indices of 'input_schemas' in PluginSpec.
+  // - If an upstream node produced no value (but didn't fail), the message here will have its 'empty' flag set to true.
+  repeated Message messages = 1;
+
+  // The fully resolved configuration parameters for this execution.
+  // - The Engine processes the raw 'ConfigValue' map before creating this struct.
+  // - All environment variables ('from_env') and Secrets are already resolved and injected as plain values here.
+  // - This allows the WASM Plugin to simply read values without needing access to the Host's environment or secret store.
+  google.protobuf.Struct config = 2;
+}
+
+// PluginCallResult represents the strict output contract returned by a Plugin execution.
+// It follows a "Result Pattern" (Either/Or), forcing the Plugin to explicitly return
+// either a successful set of outputs OR a failure state.
+//
+// The Engine uses this message to determine the flow of the DAG:
+// - If 'ok_value' is set, the Task status becomes SUCCEEDED, and downstream nodes are triggered.
+// - If 'error' is set, the Task status becomes FAILED, and the execution halts.
+message PluginCallResult {
+  message Messages {
+    repeated Message messages = 1;
+  }
+  oneof result {
+    option (buf.validate.oneof).required = true;
+
+    // The successful output messages from the plugin.
+    Messages ok_value = 1;
+
+    // The error that occurred during execution.
+    // Returning this field signals a functional failure (e.g., API 500, Logic Error).
+    // This will cause the Engine to stop the execution path for this task.
+    PluginError error = 2;
+  }
+}
+
+// Message represents the data structure passed between plugins.
+message Message {
+  // The serialized Protobuf message payload.
+  bytes payload = 1;
+
+  // The fully qualified name of the Protobuf message type (e.g., "my.pkg.v1.Data").
+  string type = 2 [
+    (buf.validate.field).string.min_len = 1,
+    (google.api.field_behavior) = REQUIRED
+  ];
+  // A flag indicating that the payload contains sensitive information.
+  // When true, the Engine and UI should handles this message with extra care,
+  // such as masking it in logs and UIs.
+  bool sensitive = 3;
+
+  // When true, signals that the operation succeeded but produced no value.
+  // The Engine uses this flag to trigger "Short-Circuiting" for downstream nodes.
+  // If downstream nodes are configured to 'skip_on_empty_input', they will not run
+  // and will incur 0 cost.
+  bool empty = 4;
+}
+
+// PluginError defines a structured error returned by a plugin.
+message PluginError {
+  string code = 1 [
+    (buf.validate.field).string.min_len = 1,
+    (google.api.field_behavior) = REQUIRED
+  ];
+  string message = 2 [
+    (buf.validate.field).string.min_len = 1,
+    (google.api.field_behavior) = REQUIRED
+  ];
+}
