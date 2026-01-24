@@ -2,23 +2,21 @@ syntax = "proto3";
 
 package reteflow.common.solana.v1;
 
-option go_package = "github.com/reteflow/plugin-spec/gen/go/solana/v1";
-
 import "buf/validate/validate.proto";
 import "google/api/field_behavior.proto";
+
+option go_package = "github.com/reteflow/plugin-spec/gen/go/solana/v1";
 
 message Transaction {
   string id = 1 [
     (buf.validate.field).string.min_len = 1,
     (google.api.field_behavior) = REQUIRED
   ];
-
   repeated bytes signatures = 3 [
     (google.api.field_behavior) = REQUIRED,
     (buf.validate.field).repeated.min_items = 1,
     (buf.validate.field).repeated.items.bytes.min_len = 1
   ];
-
   oneof message {
     option (buf.validate.oneof).required = true;
     UnresolvedMessage unresolved_message = 4;
@@ -52,10 +50,6 @@ message MessageHeader {
 message GenericInstructionsWithSwapMetadata {
   repeated GenericInstruction instructions = 1;
   Swap swap = 2 [(google.api.field_behavior) = REQUIRED];
-}
-
-message GenericInstructions {
-  repeated GenericInstruction instructions = 1;
 }
 
 message GenericInstruction {
@@ -92,21 +86,13 @@ message PublicKeySlice {
 message TransactionSimulationResult {
   // Error message if the simulation failed, otherwise empty.
   string err = 1;
-  
   // Array of log messages.
-  repeated string logs = 2 [
-    (google.api.field_behavior) = REQUIRED
-  ];
-  
+  repeated string logs = 2 [(google.api.field_behavior) = REQUIRED];
   // The number of compute budget units consumed.
   uint64 units_consumed = 3 [
     json_name = "unitsConsumed",
     (google.api.field_behavior) = REQUIRED
   ];
-}
-
-message Accounts {
-  repeated Account accounts = 1;
 }
 
 message Account {
@@ -115,39 +101,45 @@ message Account {
     (google.api.field_behavior) = REQUIRED,
     (buf.validate.field).bytes.min_len = 1
   ];
-  
   uint64 lamports = 2;
-  
+
   // Owner address/program ID.
-  bytes owner = 3 [
-    (buf.validate.field).bytes.min_len = 1
-  ];
-  
+  bytes owner = 3 [(buf.validate.field).bytes.min_len = 1];
   bytes data = 4;
   bool executable = 5;
   uint64 space = 6;
 }
 
-message DecodedTokenAccounts {
-  repeated DecodedTokenAccount accounts = 1;
-}
-
 message DecodedTokenAccount {
-    string public_key = 1 [(google.api.field_behavior) = REQUIRED, (buf.validate.field).string.min_len = 1];
-    uint64 balance = 2;
-    string owner = 3 [(google.api.field_behavior) = REQUIRED, (buf.validate.field).string.min_len = 1];
-    string mint = 4 [(google.api.field_behavior) = REQUIRED, (buf.validate.field).string.min_len = 1];
+  string public_key = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (buf.validate.field).string.min_len = 1
+  ];
+  uint64 balance = 2;
+  string owner = 3 [
+    (google.api.field_behavior) = REQUIRED,
+    (buf.validate.field).string.min_len = 1
+  ];
+  string mint = 4 [
+    (google.api.field_behavior) = REQUIRED,
+    (buf.validate.field).string.min_len = 1
+  ];
 }
 
 message TokenBalanceDifferenceDetails {
-    string public_key = 1 [(google.api.field_behavior) = REQUIRED, (buf.validate.field).string.min_len = 1];
-    string mint = 2 [(google.api.field_behavior) = REQUIRED, (buf.validate.field).string.min_len = 1];
-    string owner = 3 [(google.api.field_behavior) = REQUIRED, (buf.validate.field).string.min_len = 1];
-    int64 difference = 4;
-}
-
-message TokenBalanceDifferencesDetails {
-    repeated TokenBalanceDifferenceDetails differences = 1;
+  string public_key = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (buf.validate.field).string.min_len = 1
+  ];
+  string mint = 2 [
+    (google.api.field_behavior) = REQUIRED,
+    (buf.validate.field).string.min_len = 1
+  ];
+  string owner = 3 [
+    (google.api.field_behavior) = REQUIRED,
+    (buf.validate.field).string.min_len = 1
+  ];
+  int64 difference = 4;
 }
 
 message BorshEncodedTransaction {
@@ -182,10 +174,6 @@ message TransactionLogEvent {
     json_name = "topics",
     (buf.validate.field).repeated.items.string.min_len = 1
   ];
-}
-
-message SwapsWithDetails {
-  repeated SwapWithDetails swaps = 1;
 }
 
 message SwapWithDetails {
@@ -258,27 +246,27 @@ message ProtocolSwapDetails {
 
 message PumpSwapDetails {
   bytes pool_address = 1 [
-    json_name = "poolAddress", 
+    json_name = "poolAddress",
     (google.api.field_behavior) = REQUIRED,
     (buf.validate.field).bytes.min_len = 1
   ];
   bytes user = 2 [
-    json_name = "user", 
+    json_name = "user",
     (google.api.field_behavior) = REQUIRED,
     (buf.validate.field).bytes.min_len = 1
   ];
   bytes global_config = 3 [
-    json_name = "globalConfig", 
+    json_name = "globalConfig",
     (google.api.field_behavior) = REQUIRED,
     (buf.validate.field).bytes.min_len = 1
   ];
   bytes base_mint = 4 [
-    json_name = "baseMint", 
+    json_name = "baseMint",
     (google.api.field_behavior) = REQUIRED,
     (buf.validate.field).bytes.min_len = 1
   ];
   bytes quote_mint = 5 [
-    json_name = "quoteMint", 
+    json_name = "quoteMint",
     (google.api.field_behavior) = REQUIRED,
     (buf.validate.field).bytes.min_len = 1
   ];
@@ -342,17 +330,14 @@ message PumpSwapDetails {
     (google.api.field_behavior) = REQUIRED,
     (buf.validate.field).bytes.min_len = 1
   ];
-  
   uint64 amount_1 = 18 [
     json_name = "amount1",
     (google.api.field_behavior) = REQUIRED
   ];
-  
   uint64 amount_2 = 19 [
     json_name = "amount2",
     (google.api.field_behavior) = REQUIRED
   ];
-  
   bool buy = 20 [
     json_name = "buy",
     (google.api.field_behavior) = REQUIRED

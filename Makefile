@@ -20,3 +20,8 @@ lint-proto:
 clean-proto:
 	@echo "Cleaning generated Protobuf files"
 	@rm -f $(SOLANA_PB_FILE)
+
+.PHONY: format-proto
+format-proto:
+	@echo "Formatting Protobuf files"
+	@$(BUF_CMD) format -w

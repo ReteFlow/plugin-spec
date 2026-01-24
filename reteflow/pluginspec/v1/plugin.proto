@@ -2,11 +2,11 @@ syntax = "proto3";
 
 package reteflow.pluginspec.v1;
 
-option go_package = "github.com/reteflow/plugin-spec/gen/go/v1";
-
-import "google/protobuf/struct.proto";
 import "buf/validate/validate.proto";
 import "google/api/field_behavior.proto";
+import "google/protobuf/struct.proto";
+
+option go_package = "github.com/reteflow/plugin-spec/gen/go/v1";
 
 // PluginSpec defines the execution contract for a plugin.
 message PluginSpec {
@@ -42,6 +42,7 @@ enum ConfigType {
   CONFIG_TYPE_MAP = 3;
   CONFIG_TYPE_INT = 4;
   CONFIG_TYPE_FLOAT = 5;
+  CONFIG_TYPE_DAG_ID_REF = 6;
 }
 
 // ConfigValue defines the properties for a single configuration item.
@@ -59,17 +60,13 @@ message ConfigValue {
     (google.api.field_behavior) = REQUIRED
   ];
   // A default or static value. Can be left empty.
-  string value = 3 [
-    (buf.validate.field).string.max_len = 1024
-  ];
+  string value = 3 [(buf.validate.field).string.max_len = 1024];
   // If true, the value must be provided for the plugin to function correctly.
   bool required = 4;
   // If true, the system will attempt to load the value from an environment variable.
   bool from_env = 5;
   // A list of predefined, allowed values for this configuration item.
-  repeated string allowed_values = 6 [
-    (buf.validate.field).repeated.items.string.max_len = 64
-  ];
+  repeated string allowed_values = 6 [(buf.validate.field).repeated.items.string.max_len = 64];
   // If true, the value can be a list of multiple values, allowing for more complex configurations.
   bool multiple_values = 7;
 
@@ -96,6 +93,8 @@ message SchemaInfo {
     (buf.validate.field).string.min_len = 1,
     (google.api.field_behavior) = REQUIRED
   ];
+  // If true, indicates that the output is an array of the message specified in 'type'.
+  bool repeated = 4;
 }
 
 // PluginCall serves as the input payload passed from the Host to the Guest.
@@ -169,4 +168,15 @@ message PluginError {
     (buf.validate.field).string.min_len = 1,
     (google.api.field_behavior) = REQUIRED
   ];
+}
+
+// GenericArrayWrapper is a standard container for returning lists of messages.
+message GenericArrayWrapper {
+  // Directly hold the list of serialized messages.
+  repeated bytes values = 1;
+
+  // The type of the elements contained within the array.
+  // This should match the expected 'type' in SchemaInfo.
+  // Example: If values unpacks to a message containing `repeated bool`, this would be "bool".
+  string element_type = 2;
 }

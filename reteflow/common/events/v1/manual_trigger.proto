@@ -2,10 +2,10 @@ syntax = "proto3";
 
 package reteflow.common.events.v1;
 
-option go_package = "github.com/reteflow/plugin-spec/gen/go/events/v1";
-
 import "buf/validate/validate.proto";
 import "google/api/field_behavior.proto";
+
+option go_package = "github.com/reteflow/plugin-spec/gen/go/events/v1";
 
 // ManualWorkflowTrigger is an event that commands the node to run a specific
 // workflow, bypassing normal active checks.
@@ -26,7 +26,7 @@ message ManualWorkflowTrigger {
   oneof trigger_event {
     // Enforce that exactly one trigger type must be provided
     option (buf.validate.oneof).required = true;
-    
+
     SolanaTransactionTrigger solana_transaction = 3;
   }
 }
