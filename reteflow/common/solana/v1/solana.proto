@@ -79,6 +79,10 @@ message AddressTable {
   map<string, PublicKeySlice> address_tables = 7;
 }
 
+message PublicKey {
+  bytes key = 1 [(buf.validate.field).bytes.min_len = 1];
+}
+
 message PublicKeySlice {
   repeated bytes keys = 1;
 }
