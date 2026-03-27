@@ -76,7 +76,7 @@ message MessageAddressTableLookup {
 }
 
 message AddressTable {
-  map<string, PublicKeySlice> address_tables = 7;
+  map<PublicKey, PublicKeySlice> address_tables = 7;
 }
 
 message PublicKey {
