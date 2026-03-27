@@ -76,15 +76,25 @@ message MessageAddressTableLookup {
 }
 
 message AddressTable {
-  map<PublicKey, PublicKeySlice> address_tables = 7;
+  repeated AddressTableEntry entries = 7;
+}
+
+message AddressTableEntry {
+  PublicKey pubkey = 1 [(google.api.field_behavior) = REQUIRED];
+  PublicKeySlice slice = 2 [(google.api.field_behavior) = REQUIRED];
 }
 
 message PublicKey {
-  bytes key = 1 [(buf.validate.field).bytes.min_len = 1];
+  bytes key = 1 [
+    (buf.validate.field).bytes.len = 32,
+    (google.api.field_behavior) = REQUIRED
+  ]; 
 }
 
 message PublicKeySlice {
-  repeated bytes keys = 1;
+  repeated bytes keys = 1 [
+    (buf.validate.field).repeated.items.bytes.len = 32
+  ];
 }
 
 message TransactionSimulationResult {
