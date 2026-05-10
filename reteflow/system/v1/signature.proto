@@ -1,0 +1,18 @@
+syntax = "proto3";
+
+package reteflow.system.v1;
+
+option go_package = "github.com/reteflow/eventra-go/gen/reteflow/system/v1";
+
+message WorkflowSignature {
+  // The full Protobuf message type required by the Start Node (primary)
+  string input_type = 1;
+  // The full Protobuf message type produced by the End Node (primary)
+  string output_type = 2;
+  // Optional: Metadata for optimization (e.g., complexity score, user_id)
+  string user_id = 3;
+  // The full list of Protobuf message types produced by the End Node
+  repeated string output_types = 4;
+  // The full list of Protobuf message types required by the Start Nodes
+  repeated string input_types = 5;
+}

@@ -88,7 +88,7 @@ message PublicKey {
   bytes key = 1 [
     (buf.validate.field).bytes.len = 32,
     (google.api.field_behavior) = REQUIRED
-  ]; 
+  ];
 }
 
 message PublicKeySlice {
@@ -355,5 +355,20 @@ message PumpSwapDetails {
   bool buy = 20 [
     json_name = "buy",
     (google.api.field_behavior) = REQUIRED
+  ];
+  bool is_cashback_coin = 21 [
+    json_name = "isCashbackCoin"
+  ];
+  bytes user_volume_accumulator_account = 22 [
+    json_name = "userVolumeAccumulatorAccount",
+    (buf.validate.field).bytes.max_len = 32
+  ];
+  bytes buyback_fee_recipient = 23 [
+    json_name = "buybackFeeRecipient",
+    (buf.validate.field).bytes.max_len = 32
+  ];
+  bytes pool_v2_pda_key = 24 [
+    json_name = "poolV2PdaKey",
+    (buf.validate.field).bytes.max_len = 32
   ];
 }
